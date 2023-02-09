@@ -44,5 +44,43 @@ pipeline {
                 }
             }
         }
+
+        stage('Deploy to Server') {
+            steps {
+                echo 'Deploy to Server'
+                withCredentials([
+                    usernamePassword(credentialsId: 'DOCKER_HUB_CREDENTIAL',
+                                        usernameVariable: 'DOCKER_HUB_ID',
+                                        passwordVariable: 'DOCKER_HUB_PW'),
+                    sshUserPrivateKey(credentialsId: 'DEV_SSH',
+                                        keyFileVariable: 'KEY_FILE',
+                                        passphraseVariable: 'PW',
+                                        usernameVariable: 'USERNAME'),
+                    string(credentialsId: 'DEV_SSH_HOST', variable: 'HOST'),
+                    string(credentialsId: 'DEV_SSH_PORT', variable: 'PORT')]) {
+
+                    script {
+                        def remote = [:]
+                        remote.name = 'cicd_test'
+                        remote.host = "${HOST}"
+                        remote.user = "${USERNAME}"
+                        remote.password = "${PW}"
+                        remote.port = "${PORT}" as Integer
+                        remote.allowAnyHosts = true
+
+                        sshCommand remote: remote, command: """
+                            docker pull ${DOCKER_HUB_ID}/cicd-test:latest
+                        """
+                        sshCommand remote: remote, command: 'docker rm -f springboot'
+                        sshCommand remote: remote, command: """
+                            docker run -d --name springboot \\
+                            -p 8080:8080 -e \"SPRING_PROFILES_ACTIVE=dev\" \\
+                            ${DOCKER_HUB_ID}/cicd-test:latest
+                        """
+                    }
+                }
+            }
+        }
+
     }
 }
