@@ -42,14 +42,13 @@ pipeline {
         stage('Git Secret Reveal') {
             steps {
                 echo 'Git Secret Reveal'
-                sh """
-                    gpg --batch --import ${GPG_SECRET_KEY}
-                    git secret reveal -f
-                """
+                sh(script:
+                    ('gpg --batch --import ' + GPG_SECRET_KEY + ' && '
+                    + ' git secret reveal -f'))
             }
         }
 
-        stage('Parse Interal Port') {
+        stage('Parse Internal Port') {
             steps {
                 script {
                     INTERNAL_PORT = sh(script: "yq e '.server.port' ./src/main/resources/application-${OPERATION_ENV}.yml", returnStdout: true).trim();
@@ -107,28 +106,27 @@ pipeline {
 
                     script {
                         def remote = [:]
-                        remote.name = "${OPERATION_ENV}"
-                        remote.host = "${HOST}"
-                        remote.user = "${USERNAME}"
-                        remote.password = "${PW}"
-                        remote.port = "${PORT}" as Integer
+                        remote.name = OPERATION_ENV
+                        remote.host = HOST
+                        remote.user = USERNAME
+                        remote.password = PW
+                        remote.port = PORT as Integer
                         remote.allowAnyHosts = true
 
-                        sshCommand remote: remote, command: """
-                            docker pull ${DOCKER_HUB_ID}/${DOCKER_IMAGE_NAME}:latest
-                        """
+                        sshCommand remote: remote, command:
+                            'docker pull ' + DOCKER_HUB_ID + "/" + DOCKER_IMAGE_NAME + ":latest"
+
                         sshPut remote: remote, from: './deploy.sh', into: '.'
                         sshPut remote: remote, from: './nginx.conf', into: '.'
 
-                        sshCommand remote: remote, command: """
-                            export OPERATION_ENV=${OPERATION_ENV} &&\\
-                            export INTERNAL_PORT=${INTERNAL_PORT} &&\\
-                            export EXTERNAL_PORT_GREEN=${EXTERNAL_PORT_GREEN} &&\\
-                            export EXTERNAL_PORT_BLUE=${EXTERNAL_PORT_BLUE} &&\\
-                            export DOCKER_IMAGE_NAME=${DOCKER_HUB_ID}/${DOCKER_IMAGE_NAME} &&\\
-                            chmod +x deploy.sh &&\\
-                            ./deploy.sh
-                            """
+                        sshCommand remote: remote, command:
+                            ('export OPERATION_ENV=' + OPERATION_ENV + ' && '
+                            + 'export INTERNAL_PORT=' + INTERNAL_PORT + ' && '
+                            + 'export EXTERNAL_PORT_GREEN=' + EXTERNAL_PORT_GREEN + ' && '
+                            + 'export EXTERNAL_PORT_BLUE=' + EXTERNAL_PORT_BLUE + ' && '
+                            + 'export DOCKER_IMAGE_NAME=' + DOCKER_HUB_ID + '/' + DOCKER_IMAGE_NAME + ' && '
+                            + 'chmod +x deploy.sh && '
+                            + './deploy.sh')
                     }
                 }
             }

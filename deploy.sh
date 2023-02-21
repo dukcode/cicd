@@ -8,11 +8,12 @@ NGINX_CONF_FILE_DIR=~
 
 DOCKER_CONTAINER_NAME_PREFIX=springboot
 
-echo $INTERNAL_PORT
-echo $EXTERNAL_PORT_GREEN
-echo $EXTERNAL_PORT_BLUE
-echo $DOCKER_IMAGE_NAME
-echo $OPERATION_ENV
+# 받아올 변수
+# INTERNAL_PORT
+# EXTERNAL_PORT_GREEN
+# EXTERNAL_PORT_BLUE
+# DOCKER_IMAGE_NAME
+# OPERATION_ENV
 
 # nginx 컨테이너가 정상 작동하는지 확인
 IS_NGINX_RUNNING=$(docker inspect -f '{{.State.Status}}' nginx | grep running)
