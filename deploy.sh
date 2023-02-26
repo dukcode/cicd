@@ -71,7 +71,6 @@ do
 
   if [ -n "${RESPONSE}" ]; then
     echo "> Health check 성공"
-    sed -i "2s/.*/server 172.17.0.1:${EXTERNAL_PORT};/g" ${NGINX_CONF_FILE_DIR}/nginx.conf
     yes | cp -rf ${NGINX_CONF_FILE_DIR}/nginx.conf ${HOST_NGINX_CONF_DIR}/conf.d/default.conf
 
     docker exec nginx nginx -s reload
